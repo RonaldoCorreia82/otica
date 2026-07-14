@@ -22,6 +22,7 @@ export default function UnifyModal({ isOpen, onClose, selectedBillings, onSucces
   const [cidade, setCidade] = useState('');
   const [cpf, setCpf] = useState('');
   const [observacao, setObservacao] = useState('');
+  const [banco, setBanco] = useState('');
   
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -79,6 +80,10 @@ export default function UnifyModal({ isOpen, onClose, selectedBillings, onSucces
         .filter(Boolean)
         .join(' | ');
       setObservacao(origObs);
+
+      // 7. Prefill first available bank
+      const firstBanco = selectedBillings.find(b => b.banco)?.banco || '';
+      setBanco(firstBanco);
     }
   }, [isOpen, selectedBillings]);
 
@@ -112,7 +117,8 @@ export default function UnifyModal({ isOpen, onClose, selectedBillings, onSucces
         parcelas: JSON.stringify(selectedBillings.map(b => ({
           vencimento: b.vencimento,
           valor: b.valor
-        })))
+        }))),
+        banco: banco.trim() || undefined
       };
 
       await db.unifyBillings(idsToDelete, unifiedData);
@@ -253,6 +259,18 @@ export default function UnifyModal({ isOpen, onClose, selectedBillings, onSucces
                   className={styles.input}
                   value={endereco}
                   onChange={(e) => setEndereco(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Banco</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={banco}
+                  onChange={(e) => setBanco(e.target.value)}
+                  placeholder="Ex: banco Satander"
                   disabled={isSubmitting}
                 />
               </div>

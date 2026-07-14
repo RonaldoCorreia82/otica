@@ -13,6 +13,7 @@ export interface Billing {
   observacao?: string;
   status: 'paid' | 'pending' | 'overdue';
   parcelas?: string;
+  banco?: string;
   created_at?: string;
 }
 

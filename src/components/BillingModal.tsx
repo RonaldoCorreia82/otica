@@ -26,6 +26,7 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
   const [cpf, setCpf] = useState('');
   const [observacao, setObservacao] = useState('');
   const [status, setStatus] = useState<'paid' | 'pending' | 'overdue'>('pending');
+  const [banco, setBanco] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Installments state
@@ -59,6 +60,7 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
       setCpf(editingBilling.cpf || '');
       setObservacao(editingBilling.observacao || '');
       setStatus(editingBilling.status);
+      setBanco(editingBilling.banco || '');
       
       if (editingBilling.parcelas) {
         try {
@@ -89,6 +91,7 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
       setCpf('');
       setObservacao('');
       setStatus('pending');
+      setBanco('');
       const today = new Date().toISOString().split('T')[0];
       setInstallments([{ id: '1', vencimento: today, valor: '' }]);
     }
@@ -125,7 +128,8 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
         cpf: cpf || undefined,
         observacao: observacao || undefined,
         status,
-        parcelas: serializedParcelas
+        parcelas: serializedParcelas,
+        banco: banco.trim() || undefined
       });
       onClose();
     } catch (err) {
@@ -321,6 +325,21 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
                 <option value="paid">Pago</option>
                 <option value="overdue">Atrasado</option>
               </select>
+            </div>
+
+            <div className={styles.inputGroup}>
+              <label htmlFor="banco" className={styles.label}>
+                Banco
+              </label>
+              <input
+                id="banco"
+                type="text"
+                className={styles.input}
+                value={banco}
+                onChange={(e) => setBanco(e.target.value)}
+                placeholder="Ex: banco Satander"
+                disabled={isSubmitting}
+              />
             </div>
           </div>
 

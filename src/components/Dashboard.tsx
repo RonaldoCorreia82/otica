@@ -26,6 +26,30 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isUnifyModalOpen, setIsUnifyModalOpen] = useState(false);
   
+  // Real-time clock state
+  const [timeStr, setTimeStr] = useState<string>('');
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const datePart = now.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const timePart = now.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      setTimeStr(`${datePart} - ${timePart}`);
+    };
+    
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
   
@@ -192,7 +216,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       (item.cpf && item.cpf.includes(query)) ||
       (item.cidade && item.cidade.toLowerCase().includes(query)) ||
       (item.endereco && item.endereco.toLowerCase().includes(query)) ||
-      (item.observacao && item.observacao.toLowerCase().includes(query));
+      (item.observacao && item.observacao.toLowerCase().includes(query)) ||
+      (item.banco && item.banco.toLowerCase().includes(query));
     
     return matchesStatus && matchesSearch;
   });
@@ -235,7 +260,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           <span className={styles.headerTitle}>Ótica</span>
         </div>
         <div className={styles.headerRight}>
-          <span className={styles.userInfo}>Olá, <strong>{user.username}</strong> ({user.role === 'admin' ? 'Admin' : 'Operador'})</span>
+          <span className={styles.userInfo}>
+            Olá, <strong>{user.username}</strong> ({user.role === 'admin' ? 'Admin' : 'Operador'})
+            {timeStr && <span className={styles.userTime}> • {timeStr}</span>}
+          </span>
           {user.role === 'admin' && (
             <button className={styles.userMgmtBtn} onClick={() => setIsUserModalOpen(true)} title="Gerenciar Usuários">
               Gerenciar Usuários
@@ -410,12 +438,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         title="Selecionar Todos na Página"
                       />
                     </th>
-                    <th className={styles.th} style={{ width: '8%' }}>OS</th>
-                    <th className={styles.th} style={{ width: '30%' }}>Pagador / CPF / Contato</th>
-                    <th className={styles.th} style={{ width: '25%' }}>Localização / Endereço</th>
+                    <th className={styles.th} style={{ width: '6%' }}>OS</th>
+                    <th className={styles.th} style={{ width: '28%' }}>Pagador / CPF / Contato</th>
+                    <th className={styles.th} style={{ width: '20%' }}>Localização / Endereço</th>
+                    <th className={styles.th} style={{ width: '12%' }}>Banco</th>
                     <th className={styles.th} style={{ width: '11%', whiteSpace: 'nowrap' }}>Vencimento</th>
                     <th className={styles.th} style={{ width: '11%', whiteSpace: 'nowrap' }}>Valor</th>
-                    <th className={styles.th} style={{ width: '11%', whiteSpace: 'nowrap' }}>Status</th>
+                    <th className={styles.th} style={{ width: '12%', whiteSpace: 'nowrap' }}>Status</th>
                     <th className={styles.th} style={{ width: '120px', textAlign: 'right' }}>Ações</th>
                   </tr>
                 </thead>
@@ -447,6 +476,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         <td className={styles.td}>
                           <div>{item.cidade || <span style={{ color: 'var(--text-muted)' }}>-</span>}</div>
                           {item.endereco && <div className={styles.clientDesc} title={item.endereco}>{item.endereco}</div>}
+                        </td>
+                        <td className={styles.td}>
+                          <span style={{ fontWeight: '500', color: 'var(--text-secondary)' }}>
+                            {item.banco || <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                          </span>
                         </td>
                         <td className={styles.td} style={{ padding: '0' }}>
                           {(() => {
@@ -637,6 +671,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         <div>
                           <div className={styles.mobileLabel}>Telefone</div>
                           <div className={styles.mobileVal}>{item.telefone}</div>
+                        </div>
+                      )}
+
+                      {item.banco && (
+                        <div>
+                          <div className={styles.mobileLabel}>Banco</div>
+                          <div className={styles.mobileVal}>{item.banco}</div>
                         </div>
                       )}
 
