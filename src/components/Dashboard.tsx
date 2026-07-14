@@ -39,6 +39,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Search state for Recebidos tab
   const [recebidosSearch, setRecebidosSearch] = useState('');
 
+  // Selected Month filter state
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
+
   // Recebidos list state
   const [recebidos, setRecebidos] = useState<Recebido[]>([]);
 
@@ -357,18 +360,59 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }));
   }, [recebidos]);
 
-  // Filtering paid installments based on recebidosSearch query
+  // Extract available payment months dynamically from recebidos database list
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    recebidos.forEach(r => {
+      if (r.pagamento) {
+        const [year, month] = r.pagamento.split('-');
+        if (year && month) {
+          months.add(`${year}-${month}`);
+        }
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [recebidos]);
+
+  // Format month and year into user-friendly text
+  const formatMonthOption = (yearMonth: string) => {
+    const [year, month] = yearMonth.split('-');
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthIdx = parseInt(month, 10) - 1;
+    return `${monthNames[monthIdx]} de ${year}`;
+  };
+
+  // Filtering paid installments based on recebidosSearch query and month filter
   const filteredRecebidos = useMemo(() => {
+    let list = paidInstallments;
+
+    // 1. Month filter
+    if (selectedMonthFilter !== 'all') {
+      list = list.filter(item => {
+        if (item.raw && item.raw.pagamento) {
+          return item.raw.pagamento.startsWith(selectedMonthFilter);
+        }
+        return false;
+      });
+    }
+
+    // 2. Search query filter
     const query = recebidosSearch.toLowerCase();
-    if (!query) return paidInstallments;
-    return paidInstallments.filter(item =>
-      item.pagador.toLowerCase().includes(query) ||
-      item.os.toLowerCase().includes(query) ||
-      item.cidade.toLowerCase().includes(query) ||
-      item.endereco.toLowerCase().includes(query) ||
-      item.telefone.includes(query)
-    );
-  }, [paidInstallments, recebidosSearch]);
+    if (query) {
+      list = list.filter(item =>
+        item.pagador.toLowerCase().includes(query) ||
+        item.os.toLowerCase().includes(query) ||
+        item.cidade.toLowerCase().includes(query) ||
+        item.endereco.toLowerCase().includes(query) ||
+        item.telefone.includes(query)
+      );
+    }
+
+    return list;
+  }, [paidInstallments, recebidosSearch, selectedMonthFilter]);
 
   // Pagination logic
   const totalItems = filteredBillings.length;
@@ -1067,8 +1111,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
 
             {/* Search and Filters Bar */}
-            <div className={styles.recebidosBar}>
-              <div className={styles.searchBox}>
+            <div className={styles.recebidosBar} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className={styles.searchBox} style={{ flex: 1, minWidth: '260px', marginBottom: 0 }}>
                 <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -1086,6 +1130,20 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </button>
                 )}
               </div>
+
+              <select
+                className={styles.filterSelect}
+                value={selectedMonthFilter}
+                onChange={(e) => setSelectedMonthFilter(e.target.value)}
+                style={{ height: '42px', minWidth: '180px' }}
+              >
+                <option value="all">Todos os Meses</option>
+                {availableMonths.map(ym => (
+                  <option key={ym} value={ym}>
+                    {formatMonthOption(ym)}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Table Container */}
