@@ -30,7 +30,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [timeStr, setTimeStr] = useState<string>('');
   
   // Navigation active tab
-  const [activeTab, setActiveTab] = useState<'cobranças' | 'vendas' | 'recebidos' | 'mensagens' | 'backup'>('cobranças');
+  const [activeTab, setActiveTab] = useState<'cobranças' | 'vendas' | 'recebidos' | 'mensagens' | 'relatório' | 'backup'>('cobranças');
 
   useEffect(() => {
     const updateClock = () => {
@@ -352,6 +352,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           }}
         >
           Mensagens
+        </button>
+        <button
+          className={`${styles.navLink} ${activeTab === 'relatório' ? styles.navLinkActive : ''}`}
+          onClick={() => {
+            setActiveTab('relatório');
+            setSelectedIds(new Set());
+          }}
+        >
+          Relatório
         </button>
         <button
           className={`${styles.navLink} ${activeTab === 'backup' ? styles.navLinkActive : ''}`}
@@ -925,6 +934,78 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <div className={styles.placeholderIcon}>💬</div>
             <h3>Gerenciador de Mensagens</h3>
             <p>Esta área está em desenvolvimento. Em breve você poderá criar modelos de mensagens e disparos automatizados.</p>
+          </div>
+        )}
+
+        {activeTab === 'relatório' && (
+          <div className={styles.reportPanel}>
+            <h3>Relatório Geral Financeiro</h3>
+            <p className={styles.reportSubtitle}>Resumo consolidado das cobranças por status e por instituição bancária.</p>
+            
+            <div className={styles.reportGrid}>
+              <div className={styles.reportCard}>
+                <h4>Resumo por Status</h4>
+                <table className={styles.reportTable}>
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Quantidade</th>
+                      <th>Valor Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Pendente</td>
+                      <td>{billings.filter(b => getDisplayStatus(b) === 'pending').length}</td>
+                      <td>{formatCurrency(billings.filter(b => getDisplayStatus(b) === 'pending').reduce((acc, curr) => acc + curr.valor, 0))}</td>
+                    </tr>
+                    <tr>
+                      <td>Pago</td>
+                      <td>{billings.filter(b => getDisplayStatus(b) === 'paid').length}</td>
+                      <td>{formatCurrency(billings.filter(b => getDisplayStatus(b) === 'paid').reduce((acc, curr) => acc + curr.valor, 0))}</td>
+                    </tr>
+                    <tr>
+                      <td>Vencido</td>
+                      <td>{billings.filter(b => getDisplayStatus(b) === 'overdue').length}</td>
+                      <td>{formatCurrency(billings.filter(b => getDisplayStatus(b) === 'overdue').reduce((acc, curr) => acc + curr.valor, 0))}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.reportCard}>
+                <h4>Resumo por Banco</h4>
+                <table className={styles.reportTable}>
+                  <thead>
+                    <tr>
+                      <th>Banco</th>
+                      <th>Quantidade</th>
+                      <th>Valor Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const bankMap: { [key: string]: { count: number; total: number } } = {};
+                      billings.forEach(b => {
+                        const bankName = b.banco || 'Não Informado';
+                        if (!bankMap[bankName]) {
+                          bankMap[bankName] = { count: 0, total: 0 };
+                        }
+                        bankMap[bankName].count += 1;
+                        bankMap[bankName].total += b.valor;
+                      });
+                      return Object.entries(bankMap).map(([bank, data]) => (
+                        <tr key={bank}>
+                          <td>{bank}</td>
+                          <td>{data.count}</td>
+                          <td>{formatCurrency(data.total)}</td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </main>
