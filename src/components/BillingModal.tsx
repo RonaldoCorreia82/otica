@@ -15,6 +15,7 @@ interface ModalInstallment {
   id: string;
   vencimento: string;
   valor: string;
+  paga: boolean;
 }
 
 export default function BillingModal({ isOpen, onClose, onSave, editingBilling }: BillingModalProps) {
@@ -36,7 +37,7 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
     const today = new Date().toISOString().split('T')[0];
     setInstallments(prev => [
       ...prev,
-      { id: Math.random().toString(), vencimento: today, valor: '' }
+      { id: Math.random().toString(), vencimento: today, valor: '', paga: false }
     ]);
   };
 
@@ -47,6 +48,12 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
   const handleUpdateInstallment = (id: string, field: 'vencimento' | 'valor', value: string) => {
     setInstallments(prev =>
       prev.map(i => (i.id === id ? { ...i, [field]: value } : i))
+    );
+  };
+
+  const handleToggleInstallmentPaid = (id: string) => {
+    setInstallments(prev =>
+      prev.map(i => (i.id === id ? { ...i, paga: !i.paga } : i))
     );
   };
 
@@ -70,17 +77,18 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
               parsed.map((p: any) => ({
                 id: Math.random().toString(),
                 vencimento: p.vencimento,
-                valor: p.valor.toString()
+                valor: p.valor.toString(),
+                paga: !!p.paga
               }))
             );
           } else {
-            setInstallments([{ id: '1', vencimento: editingBilling.vencimento, valor: editingBilling.valor.toString() }]);
+            setInstallments([{ id: '1', vencimento: editingBilling.vencimento, valor: editingBilling.valor.toString(), paga: editingBilling.status === 'paid' }]);
           }
         } catch (e) {
-          setInstallments([{ id: '1', vencimento: editingBilling.vencimento, valor: editingBilling.valor.toString() }]);
+          setInstallments([{ id: '1', vencimento: editingBilling.vencimento, valor: editingBilling.valor.toString(), paga: editingBilling.status === 'paid' }]);
         }
       } else {
-        setInstallments([{ id: '1', vencimento: editingBilling.vencimento, valor: editingBilling.valor.toString() }]);
+        setInstallments([{ id: '1', vencimento: editingBilling.vencimento, valor: editingBilling.valor.toString(), paga: editingBilling.status === 'paid' }]);
       }
     } else {
       setOs('');
@@ -93,7 +101,7 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
       setStatus('pending');
       setBanco('');
       const today = new Date().toISOString().split('T')[0];
-      setInstallments([{ id: '1', vencimento: today, valor: '' }]);
+      setInstallments([{ id: '1', vencimento: today, valor: '', paga: false }]);
     }
   }, [editingBilling, isOpen]);
 
@@ -113,9 +121,17 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
       const serializedParcelas = JSON.stringify(
         installments.map(i => ({
           vencimento: i.vencimento,
-          valor: parseFloat(i.valor)
+          valor: parseFloat(i.valor),
+          paga: i.paga
         }))
       );
+
+      let finalStatus = status;
+      if (installments.every(i => i.paga)) {
+        finalStatus = 'paid';
+      } else if (status === 'paid' && installments.some(i => !i.paga)) {
+        finalStatus = 'pending';
+      }
 
       await onSave({
         os,
@@ -127,7 +143,7 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
         cidade: cidade || undefined,
         cpf: cpf || undefined,
         observacao: observacao || undefined,
-        status,
+        status: finalStatus,
         parcelas: serializedParcelas,
         banco: banco.trim() || undefined
       });
@@ -246,6 +262,16 @@ export default function BillingModal({ isOpen, onClose, onSave, editingBilling }
                     />
                   </div>
                   
+                  <button
+                    type="button"
+                    className={`${styles.payInstallmentBtn} ${inst.paga ? styles.payInstallmentBtnActive : ''}`}
+                    onClick={() => handleToggleInstallmentPaid(inst.id)}
+                    disabled={isSubmitting}
+                    title={inst.paga ? "Marcar como Pendente" : "Marcar como Pago"}
+                  >
+                    ✓
+                  </button>
+
                   {installments.length > 1 && (
                     <button
                       type="button"

@@ -932,6 +932,21 @@
   border-bottom: none;
 }
 
+.installmentPaid {
+  color: var(--success) !important;
+  text-decoration: line-through;
+  text-decoration-color: var(--success);
+  background-color: var(--success-light);
+}
+
+.installmentCheck {
+  color: var(--success);
+  font-weight: 800;
+  margin-left: 6px;
+  display: inline-block;
+}
+
+
 
 
 

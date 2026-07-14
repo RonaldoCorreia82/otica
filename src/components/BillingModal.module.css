@@ -236,3 +236,38 @@
   border-color: #fecaca;
 }
 
+.payInstallmentBtn {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: #ffffff;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.payInstallmentBtn:hover {
+  color: var(--success);
+  background-color: var(--success-light);
+  border-color: #bbf7d0;
+}
+
+.payInstallmentBtnActive {
+  color: #ffffff;
+  background-color: var(--success);
+  border-color: var(--success);
+}
+
+.payInstallmentBtnActive:hover {
+  background-color: var(--success-hover);
+  border-color: var(--success-hover);
+}
+
+

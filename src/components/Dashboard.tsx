@@ -581,8 +581,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                               return (
                                 <div className={styles.installmentsCol}>
                                   {installments.map((inst, idx) => (
-                                    <div key={idx} className={styles.installmentRow}>
+                                    <div key={idx} className={`${styles.installmentRow} ${inst.paga ? styles.installmentPaid : ''}`}>
                                       {inst.date}
+                                      {inst.paga && <span className={styles.installmentCheck} title="Pago">✓</span>}
                                     </div>
                                   ))}
                                 </div>
@@ -602,7 +603,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                               return (
                                 <div className={styles.installmentsCol}>
                                   {installments.map((inst, idx) => (
-                                    <div key={idx} className={`${styles.installmentRow} ${styles.value}`}>
+                                    <div key={idx} className={`${styles.installmentRow} ${styles.value} ${inst.paga ? styles.installmentPaid : ''}`}>
                                       {formatCurrency(inst.value)}
                                     </div>
                                   ))}
@@ -723,11 +724,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                 Detalhes das Parcelas
                               </div>
                               {installments.map((inst, idx) => (
-                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', padding: '2px 0' }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>Venc: {inst.date}</span>
-                                  <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{formatCurrency(inst.value)}</span>
-                                </div>
-                              ))}
+                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', padding: '2px 0', textDecoration: inst.paga ? 'line-through' : 'none', opacity: inst.paga ? 0.6 : 1 }}>
+                                   <span style={{ color: inst.paga ? 'var(--success)' : 'var(--text-secondary)' }}>
+                                     Venc: {inst.date} {inst.paga && '✓'}
+                                   </span>
+                                   <span style={{ fontWeight: '600', color: inst.paga ? 'var(--success)' : 'var(--text-main)' }}>
+                                     {formatCurrency(inst.value)}
+                                   </span>
+                                 </div>
+                               ))}
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', fontWeight: '700', borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '2px' }}>
                                 <span>Total Consolidadas</span>
                                 <span>{formatCurrency(item.valor)}</span>

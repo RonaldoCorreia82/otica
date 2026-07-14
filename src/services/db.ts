@@ -20,6 +20,7 @@ export interface Billing {
 export interface Installment {
   date: string;
   value: number;
+  paga?: boolean;
 }
 
 export function parseInstallments(item: Billing): Installment[] | null {
@@ -31,7 +32,8 @@ export function parseInstallments(item: Billing): Installment[] | null {
         const [year, month, day] = p.vencimento.split('-');
         return {
           date: `${day}/${month}/${year}`,
-          value: Number(p.valor)
+          value: Number(p.valor),
+          paga: !!p.paga
         };
       });
     }
