@@ -1197,6 +1197,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed;
 }
 
 .recebidosTh {
@@ -1229,6 +1230,8 @@
   font-size: 13.5px;
   color: var(--text-main);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recebidosBadgePaid {

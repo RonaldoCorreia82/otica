@@ -1100,17 +1100,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <table className={styles.recebidosTable}>
                   <thead>
                     <tr>
-                      <th className={styles.recebidosTh}>OS</th>
-                      <th className={styles.recebidosTh}>NOME</th>
-                      <th className={styles.recebidosTh}>CIDADE</th>
-                      <th className={styles.recebidosTh}>VENCIMENTO</th>
-                      <th className={styles.recebidosTh}>ENDEREÇO</th>
-                      <th className={styles.recebidosTh}>TELEFONE</th>
-                      <th className={styles.recebidosTh}>PAGAMENTO</th>
-                      <th className={styles.recebidosTh}>VALOR PAGO</th>
-                      <th className={styles.recebidosTh}>PARCELA</th>
-                      <th className={styles.recebidosTh}>PAGAMENTO</th>
-                      <th className={styles.recebidosTh} style={{ textAlign: 'right' }}>AÇÕES</th>
+                      <th className={styles.recebidosTh} style={{ width: '5%' }}>OS</th>
+                      <th className={styles.recebidosTh} style={{ width: '18%' }}>NOME</th>
+                      <th className={styles.recebidosTh} style={{ width: '9%' }}>CIDADE</th>
+                      <th className={styles.recebidosTh} style={{ width: '9%' }}>VENCIMENTO</th>
+                      <th className={styles.recebidosTh} style={{ width: '15%' }}>ENDEREÇO</th>
+                      <th className={styles.recebidosTh} style={{ width: '9%' }}>TELEFONE</th>
+                      <th className={styles.recebidosTh} style={{ width: '9%' }}>PAGAMENTO</th>
+                      <th className={styles.recebidosTh} style={{ width: '9%' }}>VALOR PAGO</th>
+                      <th className={styles.recebidosTh} style={{ width: '7%' }}>PARCELA</th>
+                      <th className={styles.recebidosTh} style={{ width: '9%' }}>PAGAMENTO</th>
+                      <th className={styles.recebidosTh} style={{ width: '100px', textAlign: 'right' }}>AÇÕES</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1119,7 +1119,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         <td className={styles.recebidosTd} style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>
                           #{item.os}
                         </td>
-                        <td className={styles.recebidosTd} style={{ fontWeight: '600' }}>
+                        <td className={styles.recebidosTd} style={{ fontWeight: '600' }} title={item.pagador}>
                           {item.pagador}
                         </td>
                         <td className={styles.recebidosTd}>
@@ -1128,8 +1128,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         <td className={styles.recebidosTd}>
                           {item.vencimentoOriginal}
                         </td>
-                        <td className={styles.recebidosTd} title={item.endereco}>
-                          {item.endereco ? (item.endereco.length > 25 ? `${item.endereco.substring(0, 25)}...` : item.endereco) : <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                        <td className={styles.recebidosTd} title={item.endereco || ''}>
+                          {item.endereco || <span style={{ color: 'var(--text-muted)' }}>-</span>}
                         </td>
                         <td className={styles.recebidosTd}>
                           {item.telefone || <span style={{ color: 'var(--text-muted)' }}>-</span>}
