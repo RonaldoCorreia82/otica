@@ -45,6 +45,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Selected Location for printing filter state
   const [printLocationFilter, setPrintLocationFilter] = useState<string>('all');
 
+  // Selected Location filter for main Cobranças page
+  const [selectedLocation, setSelectedLocation] = useState<string>('all');
+
   // Search state for Recebidos tab
   const [recebidosSearch, setRecebidosSearch] = useState('');
 
@@ -335,10 +338,24 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }, 150);
   };
 
-  // Filtering list based on search and status
+  // Extract unique locations from billings list
+  const uniqueLocations = useMemo(() => {
+    const locations = new Set<string>();
+    billings.forEach(b => {
+      if (b.cidade && b.cidade.trim()) {
+        locations.add(b.cidade.trim());
+      }
+    });
+    return Array.from(locations).sort();
+  }, [billings]);
+
+  // Filtering list based on search, status and location
   const filteredBillings = billings.filter(item => {
     const displayStatus = getDisplayStatus(item);
     const matchesStatus = filterStatus === 'all' || displayStatus === filterStatus;
+    
+    const matchesLocation = selectedLocation === 'all' || 
+      (item.cidade && item.cidade.trim().toLowerCase() === selectedLocation.trim().toLowerCase());
     
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -350,7 +367,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       (item.observacao && item.observacao.toLowerCase().includes(query)) ||
       (item.banco && item.banco.toLowerCase().includes(query));
     
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesLocation && matchesSearch;
   });
 
   // Extracting paid installments from Supabase recebidos table
@@ -601,6 +618,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             formatDate={formatDate}
             getDisplayStatus={getDisplayStatus}
             isLoading={isLoading}
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+            uniqueLocations={uniqueLocations}
+            onPrint={handlePrint}
           />
         )}
 
