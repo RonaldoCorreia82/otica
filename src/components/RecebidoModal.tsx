@@ -8,9 +8,10 @@ interface RecebidoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (recebido: Omit<Recebido, 'id' | 'created_at'>) => Promise<void>;
+  editingRecebido: Recebido | null;
 }
 
-export default function RecebidoModal({ isOpen, onClose, onSave }: RecebidoModalProps) {
+export default function RecebidoModal({ isOpen, onClose, onSave, editingRecebido }: RecebidoModalProps) {
   const [os, setOs] = useState('');
   const [nome, setNome] = useState('');
   const [cidade, setCidade] = useState('');
@@ -25,20 +26,33 @@ export default function RecebidoModal({ isOpen, onClose, onSave }: RecebidoModal
 
   useEffect(() => {
     if (isOpen) {
-      setOs('');
-      setNome('');
-      setCidade('');
-      setEndereco('');
-      setTelefone('');
-      setValorPago('');
-      setParcela('');
-      setPagamentoMetodo('PIX');
-      
-      const today = new Date().toISOString().split('T')[0];
-      setVencimento(today);
-      setPagamento(today);
+      if (editingRecebido) {
+        setOs(editingRecebido.os || '');
+        setNome(editingRecebido.nome || '');
+        setCidade(editingRecebido.cidade || '');
+        setEndereco(editingRecebido.endereco || '');
+        setTelefone(editingRecebido.telefone || '');
+        setVencimento(editingRecebido.vencimento || '');
+        setPagamento(editingRecebido.pagamento || '');
+        setValorPago(String(editingRecebido.valor_pago || ''));
+        setParcela(editingRecebido.parcela || '');
+        setPagamentoMetodo(editingRecebido.pagamento_metodo || 'PIX');
+      } else {
+        setOs('');
+        setNome('');
+        setCidade('');
+        setEndereco('');
+        setTelefone('');
+        setValorPago('');
+        setParcela('');
+        setPagamentoMetodo('PIX');
+        
+        const today = new Date().toISOString().split('T')[0];
+        setVencimento(today);
+        setPagamento(today);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editingRecebido]);
 
   if (!isOpen) return null;
 
@@ -76,7 +90,7 @@ export default function RecebidoModal({ isOpen, onClose, onSave }: RecebidoModal
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Registrar Recebido</h2>
+          <h2 className={styles.title}>{editingRecebido ? 'Editar Recebido' : 'Registrar Recebido'}</h2>
           <button className={styles.closeBtn} onClick={onClose} disabled={isSubmitting}>
             &times;
           </button>

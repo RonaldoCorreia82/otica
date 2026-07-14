@@ -148,6 +148,32 @@ export const db = {
     return data[0];
   },
 
+  async updateRecebido(id: string, recebido: Partial<Omit<Recebido, 'id' | 'created_at'>>): Promise<Recebido> {
+    const { data, error } = await supabase
+      .from('recebidos')
+      .update(recebido)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error updating recebido:', error.message);
+      throw error;
+    }
+    return data[0];
+  },
+
+  async deleteRecebido(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('recebidos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting recebido:', error.message);
+      throw error;
+    }
+  },
+
   async syncRecebidosForBilling(billingId: string, installments: Omit<Recebido, 'id' | 'created_at'>[]): Promise<void> {
     const { error: deleteError } = await supabase
       .from('recebidos')

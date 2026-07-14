@@ -45,6 +45,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Recebido modal visibility state
   const [isRecebidoModalOpen, setIsRecebidoModalOpen] = useState(false);
 
+  // Currently editing Recebido reference state
+  const [editingRecebido, setEditingRecebido] = useState<Recebido | null>(null);
+
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
@@ -176,8 +179,35 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Save manual recebido handler
   const handleSaveRecebido = async (data: Omit<Recebido, 'id' | 'created_at'>) => {
-    await db.createRecebido(data);
-    fetchBillings();
+    try {
+      if (editingRecebido && editingRecebido.id) {
+        await db.updateRecebido(editingRecebido.id, data);
+      } else {
+        await db.createRecebido(data);
+      }
+      fetchBillings();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar recebimento.');
+    }
+  };
+
+  const handleOpenEditRecebido = (item: Recebido) => {
+    setEditingRecebido(item);
+    setIsRecebidoModalOpen(true);
+  };
+
+  const handleDeleteRecebido = async (item: Recebido) => {
+    if (!item.id) return;
+    if (confirm(`Tem certeza que deseja excluir o recebimento de R$ ${formatCurrency(item.valor_pago)} de ${item.nome}?`)) {
+      try {
+        await db.deleteRecebido(item.id);
+        fetchBillings();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao excluir recebimento.');
+      }
+    }
   };
 
   // Toggle paid handler
@@ -322,7 +352,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       pagamentoDate: formatDate(r.pagamento),
       valorPago: Number(r.valor_pago),
       parcelaLabel: r.parcela,
-      statusPagamento: r.pagamento_metodo || 'Pago'
+      statusPagamento: r.pagamento_metodo || 'Pago',
+      raw: r
     }));
   }, [recebidos]);
 
@@ -1025,7 +1056,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     ({filteredRecebidos.length} {filteredRecebidos.length === 1 ? 'parcela quitada' : 'parcelas quitadas'})
                   </span>
                 </div>
-                <button type="button" className={styles.addBtn} onClick={() => setIsRecebidoModalOpen(true)}>
+                 <button type="button" className={styles.addBtn} onClick={() => { setEditingRecebido(null); setIsRecebidoModalOpen(true); }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}>
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1079,6 +1110,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       <th className={styles.recebidosTh}>VALOR PAGO</th>
                       <th className={styles.recebidosTh}>PARCELA</th>
                       <th className={styles.recebidosTh}>PAGAMENTO</th>
+                      <th className={styles.recebidosTh} style={{ textAlign: 'right' }}>AÇÕES</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1113,8 +1145,32 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         </td>
                         <td className={styles.recebidosTd}>
                           <span className={styles.recebidosBadgePaid}>
-                            Pago
+                            {item.statusPagamento}
                           </span>
+                        </td>
+                        <td className={styles.recebidosTd}>
+                          <div className={styles.actions} style={{ justifyContent: 'flex-end', margin: 0, padding: 0 }}>
+                            <button
+                              className={`${styles.actionBtn} ${styles.btnEdit}`}
+                              title="Editar Recebido"
+                              onClick={() => handleOpenEditRecebido(item.raw)}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"></path>
+                              </svg>
+                            </button>
+                            <button
+                              className={`${styles.actionBtn} ${styles.btnDelete}`}
+                              title="Excluir Recebido"
+                              onClick={() => handleDeleteRecebido(item.raw)}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1230,6 +1286,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         isOpen={isRecebidoModalOpen}
         onClose={() => setIsRecebidoModalOpen(false)}
         onSave={handleSaveRecebido}
+        editingRecebido={editingRecebido}
       />
 
       {/* Change Password Modal */}
