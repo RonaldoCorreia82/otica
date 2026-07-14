@@ -73,10 +73,10 @@ export default function RecebidoModal({ isOpen, onClose, onSave }: RecebidoModal
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-        <div className={styles.modalHeader}>
-          <h2>Registrar Recebido</h2>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Registrar Recebido</h2>
           <button className={styles.closeBtn} onClick={onClose} disabled={isSubmitting}>
             &times;
           </button>
