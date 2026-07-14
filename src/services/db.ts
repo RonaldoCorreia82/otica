@@ -135,6 +135,19 @@ export const db = {
     return data || [];
   },
 
+  async createRecebido(recebido: Omit<Recebido, 'id' | 'created_at'>): Promise<Recebido> {
+    const { data, error } = await supabase
+      .from('recebidos')
+      .insert([recebido])
+      .select();
+
+    if (error) {
+      console.error('Error creating recebido:', error.message);
+      throw error;
+    }
+    return data[0];
+  },
+
   async syncRecebidosForBilling(billingId: string, installments: Omit<Recebido, 'id' | 'created_at'>[]): Promise<void> {
     const { error: deleteError } = await supabase
       .from('recebidos')

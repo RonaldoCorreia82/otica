@@ -7,6 +7,7 @@ import BillingModal from './BillingModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import UserManagementModal from './UserManagementModal';
 import UnifyModal from './UnifyModal';
+import RecebidoModal from './RecebidoModal';
 import styles from './Dashboard.module.css';
 
 interface DashboardProps {
@@ -40,6 +41,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Recebidos list state
   const [recebidos, setRecebidos] = useState<Recebido[]>([]);
+
+  // Recebido modal visibility state
+  const [isRecebidoModalOpen, setIsRecebidoModalOpen] = useState(false);
 
   useEffect(() => {
     const updateClock = () => {
@@ -168,6 +172,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       console.error(err);
       alert('Erro ao salvar cobrança.');
     }
+  };
+
+  // Save manual recebido handler
+  const handleSaveRecebido = async (data: Omit<Recebido, 'id' | 'created_at'>) => {
+    await db.createRecebido(data);
+    fetchBillings();
   };
 
   // Toggle paid handler
@@ -1005,14 +1015,23 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <h3>Controle de Recebidos</h3>
                 <p className={styles.recebidosSubtitle}>Visualização e consulta de todas as parcelas e cobranças quitadas.</p>
               </div>
-              <div className={styles.recebidosSummary}>
-                <span className={styles.recebidosSummaryLabel}>Total Recebido:</span>
-                <span className={styles.recebidosSummaryValue}>
-                  {formatCurrency(filteredRecebidos.reduce((acc, curr) => acc + curr.valorPago, 0))}
-                </span>
-                <span className={styles.recebidosSummaryCount}>
-                  ({filteredRecebidos.length} {filteredRecebidos.length === 1 ? 'parcela quitada' : 'parcelas quitadas'})
-                </span>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div className={styles.recebidosSummary}>
+                  <span className={styles.recebidosSummaryLabel}>Total Recebido:</span>
+                  <span className={styles.recebidosSummaryValue}>
+                    {formatCurrency(filteredRecebidos.reduce((acc, curr) => acc + curr.valorPago, 0))}
+                  </span>
+                  <span className={styles.recebidosSummaryCount}>
+                    ({filteredRecebidos.length} {filteredRecebidos.length === 1 ? 'parcela quitada' : 'parcelas quitadas'})
+                  </span>
+                </div>
+                <button type="button" className={styles.addBtn} onClick={() => setIsRecebidoModalOpen(true)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}>
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span style={{ verticalAlign: 'middle' }}>Adicionar Recebido</span>
+                </button>
               </div>
             </div>
 
@@ -1204,6 +1223,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveBilling}
         editingBilling={editingBilling}
+      />
+
+      {/* Manual Recebido Form Modal */}
+      <RecebidoModal
+        isOpen={isRecebidoModalOpen}
+        onClose={() => setIsRecebidoModalOpen(false)}
+        onSave={handleSaveRecebido}
       />
 
       {/* Change Password Modal */}
