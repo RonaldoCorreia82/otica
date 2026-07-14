@@ -42,6 +42,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Print Mode state
   const [printMode, setPrintMode] = useState<'summary' | 'detailed' | null>(null);
 
+  // Selected Location for printing filter state
+  const [printLocationFilter, setPrintLocationFilter] = useState<string>('all');
+
   // Search state for Recebidos tab
   const [recebidosSearch, setRecebidosSearch] = useState('');
 
@@ -322,11 +325,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   // Printing dispatcher
-  const handlePrint = (mode: 'summary' | 'detailed') => {
+  const handlePrint = (mode: 'summary' | 'detailed', location: string = 'all') => {
+    setPrintLocationFilter(location);
     setPrintMode(mode);
     setTimeout(() => {
       window.print();
       setPrintMode(null);
+      setPrintLocationFilter('all');
     }, 150);
   };
 
@@ -425,6 +430,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedBillings = filteredBillings.slice(startIndex, startIndex + pageSize);
+
+  // Printed list filtered by location if specified
+  const printedBillings = useMemo(() => {
+    if (printLocationFilter === 'all') return billings;
+    return billings.filter(b => b.cidade && b.cidade.trim().toLowerCase() === printLocationFilter.trim().toLowerCase());
+  }, [billings, printLocationFilter]);
 
   // Select all visible items on current page helpers
   const pageIds = paginatedBillings.map(b => b.id).filter(Boolean) as string[];
@@ -697,7 +708,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
       {/* Hidden Print-Only Detailed Table */}
       <div className={styles.printTableArea}>
-        <h2>Relatório Detalhado de Cobranças - Ótica</h2>
+        <h2>Relatório Detalhado de Cobranças - Ótica {printLocationFilter !== 'all' ? `(${printLocationFilter})` : ''}</h2>
         <p>Gerado em {timeStr ? timeStr.split(' - ')[0] : new Date().toLocaleDateString('pt-BR')}</p>
         <table className={styles.printTable}>
           <thead>
@@ -712,7 +723,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </tr>
           </thead>
           <tbody>
-            {billings.map((item) => (
+            {printedBillings.map((item) => (
               <tr key={item.id}>
                 <td style={{ fontWeight: '600' }}>#{item.os}</td>
                 <td>
