@@ -31,6 +31,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<'cobranças' | 'vendas' | 'recebidos' | 'mensagens' | 'relatório' | 'backup'>('cobranças');
+  
+  // Print Mode state
+  const [printMode, setPrintMode] = useState<'summary' | 'detailed' | null>(null);
 
   useEffect(() => {
     const updateClock = () => {
@@ -239,6 +242,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     document.body.removeChild(link);
   };
 
+  // Printing dispatcher
+  const handlePrint = (mode: 'summary' | 'detailed') => {
+    setPrintMode(mode);
+    setTimeout(() => {
+      window.print();
+      setPrintMode(null);
+    }, 150);
+  };
+
   // Filtering list based on search and status
   const filteredBillings = billings.filter(item => {
     const displayStatus = getDisplayStatus(item);
@@ -281,7 +293,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const selectedBillings = billings.filter(b => b.id && selectedIds.has(b.id));
 
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} ${printMode === 'detailed' ? styles.printDetailedMode : ''}`}>
       {/* Navbar Header */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
@@ -947,14 +959,25 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <h3>Relatório Geral Financeiro</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', gap: '16px', flexWrap: 'wrap' }}>
               <p className={styles.reportSubtitle} style={{ margin: '0' }}>Resumo consolidado das cobranças por status e por instituição bancária.</p>
-              <button type="button" className={styles.printBtn} onClick={() => window.print()}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', display: 'inline-block', verticalAlign: 'middle' }}>
-                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                  <rect x="6" y="14" width="12" height="8"></rect>
-                </svg>
-                <span style={{ verticalAlign: 'middle' }}>Exportar Relatório (PDF)</span>
-              </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" className={styles.printBtn} onClick={() => handlePrint('summary')}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', display: 'inline-block', verticalAlign: 'middle' }}>
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                  </svg>
+                  <span style={{ verticalAlign: 'middle' }}>Imprimir Resumos (PDF)</span>
+                </button>
+                <button type="button" className={styles.printBtn} onClick={() => handlePrint('detailed')} style={{ backgroundColor: '#1e293b' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', display: 'inline-block', verticalAlign: 'middle' }}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                  <span style={{ verticalAlign: 'middle' }}>Exportar Tabela Completa (PDF)</span>
+                </button>
+              </div>
             </div>
             
             <div className={styles.reportGrid}>
@@ -1082,6 +1105,84 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           </button>
         </div>
       )}
+
+      {/* Hidden Print-Only Detailed Table */}
+      <div className={styles.printTableArea}>
+        <h2>Relatório Detalhado de Cobranças - Ótica</h2>
+        <p>Gerado em {timeStr ? timeStr.split(' - ')[0] : new Date().toLocaleDateString('pt-BR')}</p>
+        <table className={styles.printTable}>
+          <thead>
+            <tr>
+              <th style={{ width: '8%' }}>OS</th>
+              <th style={{ width: '28%' }}>Pagador / CPF / Contato</th>
+              <th style={{ width: '22%' }}>Localização / Endereço</th>
+              <th style={{ width: '12%' }}>Banco</th>
+              <th style={{ width: '11%' }}>Vencimento</th>
+              <th style={{ width: '11%' }}>Valor</th>
+              <th style={{ width: '8%' }}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {billings.map((item) => (
+              <tr key={item.id}>
+                <td style={{ fontWeight: '600' }}>#{item.os}</td>
+                <td>
+                  <div>{item.pagador}</div>
+                  <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
+                    {item.cpf && `CPF: ${item.cpf}`}
+                    {item.cpf && item.telefone && ' | '}
+                    {item.telefone && `Tel: ${item.telefone}`}
+                  </div>
+                </td>
+                <td>
+                  <div>{item.cidade || '-'}</div>
+                  {item.endereco && <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>{item.endereco}</div>}
+                </td>
+                <td>{item.banco || '-'}</td>
+                <td style={{ padding: '0' }}>
+                  {(() => {
+                    const installments = parseInstallments(item);
+                    if (installments) {
+                      return (
+                        <div className={styles.printInstallmentsCol}>
+                          {installments.map((inst, idx) => (
+                            <div key={idx} className={`${styles.printInstallmentRow} ${inst.paga ? styles.printInstallmentPaid : ''}`}>
+                              {inst.date} {inst.paga && '✓'}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return <div style={{ padding: '6px 8px' }}>{formatDate(item.vencimento)}</div>;
+                  })()}
+                </td>
+                <td style={{ padding: '0' }}>
+                  {(() => {
+                    const installments = parseInstallments(item);
+                    if (installments) {
+                      return (
+                        <div className={styles.printInstallmentsCol}>
+                          {installments.map((inst, idx) => (
+                            <div key={idx} className={`${styles.printInstallmentRow} ${inst.paga ? styles.printInstallmentPaid : ''}`}>
+                              {formatCurrency(inst.value)}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return <div style={{ padding: '6px 8px' }}>{formatCurrency(item.valor)}</div>;
+                  })()}
+                </td>
+                <td>
+                  <span className={item.status === 'paid' ? styles.printBadgePaid : item.status === 'overdue' ? styles.printBadgeOverdue : styles.printBadgePending}>
+                    {item.status === 'paid' ? 'Pago' : item.status === 'overdue' ? 'Vencido' : 'Pendente'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
