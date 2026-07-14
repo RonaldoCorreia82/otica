@@ -1113,13 +1113,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         <table className={styles.printTable}>
           <thead>
             <tr>
-              <th style={{ width: '8%' }}>OS</th>
-              <th style={{ width: '28%' }}>Pagador / CPF / Contato</th>
-              <th style={{ width: '22%' }}>Localização / Endereço</th>
-              <th style={{ width: '12%' }}>Banco</th>
+              <th style={{ width: '12%' }}>OS</th>
+              <th style={{ width: '22%' }}>Pagador / CPF / Contato</th>
+              <th style={{ width: '18%' }}>Localização / Endereço</th>
+              <th style={{ width: '11%' }}>Banco</th>
               <th style={{ width: '11%' }}>Vencimento</th>
               <th style={{ width: '11%' }}>Valor</th>
-              <th style={{ width: '8%' }}>Status</th>
+              <th style={{ width: '15%' }}>Status</th>
             </tr>
           </thead>
           <tbody>
