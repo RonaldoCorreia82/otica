@@ -28,6 +28,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   
   // Real-time clock state
   const [timeStr, setTimeStr] = useState<string>('');
+  
+  // Navigation active tab
+  const [activeTab, setActiveTab] = useState<'cobranças' | 'vendas' | 'recebidos' | 'mensagens' | 'backup'>('cobranças');
 
   useEffect(() => {
     const updateClock = () => {
@@ -204,6 +207,38 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     window.open(whatsappUrl, '_blank');
   };
 
+  // Export to CSV Backup
+  const handleExportCSV = () => {
+    if (billings.length === 0) return;
+    
+    const headers = ['OS', 'Pagador', 'CPF', 'Telefone', 'Cidade', 'Endereço', 'Vencimento', 'Valor', 'Status', 'Banco', 'Observações'];
+    const rows = billings.map(b => [
+      b.os,
+      b.pagador,
+      b.cpf || '',
+      b.telefone || '',
+      b.cidade || '',
+      b.endereco || '',
+      b.vencimento,
+      b.valor,
+      b.status,
+      b.banco || '',
+      b.observacao || ''
+    ]);
+    
+    // Create CSV content with UTF-8 BOM for Portuguese Excel encoding compatibility
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+      + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `backup_otica_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Filtering list based on search and status
   const filteredBillings = billings.filter(item => {
     const displayStatus = getDisplayStatus(item);
@@ -283,10 +318,58 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         </div>
       </header>
 
+      {/* Navigation Bar */}
+      <nav className={styles.navBar}>
+        <button
+          className={`${styles.navLink} ${activeTab === 'cobranças' ? styles.navLinkActive : ''}`}
+          onClick={() => setActiveTab('cobranças')}
+        >
+          Cobranças
+        </button>
+        <button
+          className={`${styles.navLink} ${activeTab === 'vendas' ? styles.navLinkActive : ''}`}
+          onClick={() => {
+            setActiveTab('vendas');
+            setSelectedIds(new Set());
+          }}
+        >
+          Vendas
+        </button>
+        <button
+          className={`${styles.navLink} ${activeTab === 'recebidos' ? styles.navLinkActive : ''}`}
+          onClick={() => {
+            setActiveTab('recebidos');
+            setSelectedIds(new Set());
+          }}
+        >
+          Recebidos
+        </button>
+        <button
+          className={`${styles.navLink} ${activeTab === 'mensagens' ? styles.navLinkActive : ''}`}
+          onClick={() => {
+            setActiveTab('mensagens');
+            setSelectedIds(new Set());
+          }}
+        >
+          Mensagens
+        </button>
+        <button
+          className={`${styles.navLink} ${activeTab === 'backup' ? styles.navLinkActive : ''}`}
+          onClick={() => {
+            setActiveTab('backup');
+            setSelectedIds(new Set());
+          }}
+        >
+          Backup
+        </button>
+      </nav>
+
       {/* Main Container */}
       <main className={styles.container}>
-        {/* Metrics Grid */}
-        <section className={styles.metricsGrid}>
+        {activeTab === 'cobranças' && (
+          <>
+            {/* Metrics Grid */}
+            <section className={styles.metricsGrid}>
           <div className={`${styles.metricCard} ${styles.metricTotal}`}>
             <div className={styles.metricHeader}>
               <span className={styles.metricTitle}>Total Cobrado</span>
@@ -807,6 +890,43 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             )}
           </section>
         )}
+        </>
+        )}
+
+        {activeTab === 'backup' && (
+          <div className={styles.placeholderPanel}>
+            <div className={styles.placeholderIcon}>💾</div>
+            <h3>Backup do Banco de Dados</h3>
+            <p>Faça o download do backup completo de todas as cobranças registradas no sistema em formato CSV.</p>
+            <button type="button" className={styles.backupBtn} onClick={handleExportCSV}>
+              Exportar Cobranças (CSV)
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'vendas' && (
+          <div className={styles.placeholderPanel}>
+            <div className={styles.placeholderIcon}>🛒</div>
+            <h3>Módulo de Vendas</h3>
+            <p>Esta área está em desenvolvimento. Em breve você poderá gerenciar as vendas da Ótica diretamente por aqui.</p>
+          </div>
+        )}
+
+        {activeTab === 'recebidos' && (
+          <div className={styles.placeholderPanel}>
+            <div className={styles.placeholderIcon}>💰</div>
+            <h3>Controle de Recebidos</h3>
+            <p>Esta área está em desenvolvimento. Em breve você terá relatórios e gráficos detalhados dos valores recebidos.</p>
+          </div>
+        )}
+
+        {activeTab === 'mensagens' && (
+          <div className={styles.placeholderPanel}>
+            <div className={styles.placeholderIcon}>💬</div>
+            <h3>Gerenciador de Mensagens</h3>
+            <p>Esta área está em desenvolvimento. Em breve você poderá criar modelos de mensagens e disparos automatizados.</p>
+          </div>
+        )}
       </main>
 
       {/* Slide-over Form Modal */}
@@ -843,7 +963,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       />
 
       {/* Floating Action Bar */}
-      {selectedIds.size > 0 && (
+      {activeTab === 'cobranças' && selectedIds.size > 0 && (
         <div className={styles.floatingActionBar}>
           <span className={styles.selectedCount}>
             {selectedIds.size} {selectedIds.size === 1 ? 'cobrança selecionada' : 'cobranças selecionadas'}
