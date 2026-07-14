@@ -945,7 +945,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         {activeTab === 'relatório' && (
           <div className={styles.reportPanel}>
             <h3>Relatório Geral Financeiro</h3>
-            <p className={styles.reportSubtitle}>Resumo consolidado das cobranças por status e por instituição bancária.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', gap: '16px', flexWrap: 'wrap' }}>
+              <p className={styles.reportSubtitle} style={{ margin: '0' }}>Resumo consolidado das cobranças por status e por instituição bancária.</p>
+              <button type="button" className={styles.printBtn} onClick={() => window.print()}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', display: 'inline-block', verticalAlign: 'middle' }}>
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span style={{ verticalAlign: 'middle' }}>Exportar Relatório (PDF)</span>
+              </button>
+            </div>
             
             <div className={styles.reportGrid}>
               <div className={styles.reportCard}>

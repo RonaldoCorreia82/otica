@@ -946,6 +946,86 @@
   display: inline-block;
 }
 
+.printBtn {
+  padding: 10px 20px;
+  background-color: var(--primary);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  border: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.printBtn:hover {
+  background-color: var(--primary-hover);
+}
+
+@media print {
+  /* Hide navbar, header, floating action bar, buttons, etc. */
+  .header,
+  .navBar,
+  .floatingActionBar,
+  .pwdBtn,
+  .logoutBtn,
+  .userMgmtBtn,
+  .printBtn,
+  .addBtn {
+    display: none !important;
+  }
+
+  /* Reset main wrapper styles to let the report expand full width */
+  .wrapper {
+    background: none !important;
+    background-color: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+  }
+
+  .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    background: none !important;
+  }
+
+  /* Expand report panel to fill the page, removing margins/borders */
+  .reportPanel {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+  }
+
+  .reportGrid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+
+  .reportCard {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 16px !important;
+    page-break-inside: avoid;
+  }
+
+  .reportTable th {
+    border-bottom: 2px solid #000000 !important;
+    color: #000000 !important;
+  }
+
+  .reportTable td {
+    border-bottom: 1px dashed #cbd5e1 !important;
+    color: #000000 !important;
+  }
+}
+
+
 
 
 
