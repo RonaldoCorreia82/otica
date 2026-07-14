@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { db, Billing, parseInstallments } from '@/services/db';
 import BillingModal from './BillingModal';
@@ -34,6 +34,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   
   // Print Mode state
   const [printMode, setPrintMode] = useState<'summary' | 'detailed' | null>(null);
+
+  // Search state for Recebidos tab
+  const [recebidosSearch, setRecebidosSearch] = useState('');
 
   useEffect(() => {
     const updateClock = () => {
@@ -268,6 +271,75 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     
     return matchesStatus && matchesSearch;
   });
+
+  // Extracting paid installments for Recebidos tab
+  const paidInstallments = useMemo(() => {
+    const list: Array<{
+      id: string;
+      os: string;
+      pagador: string;
+      cidade: string;
+      endereco: string;
+      telefone: string;
+      vencimentoOriginal: string;
+      pagamentoDate: string;
+      valorPago: number;
+      parcelaLabel: string;
+      statusPagamento: string;
+    }> = [];
+
+    billings.forEach(b => {
+      const parsed = parseInstallments(b);
+      if (parsed) {
+        parsed.forEach((inst, idx) => {
+          if (inst.paga) {
+            list.push({
+              id: `${b.id}-inst-${idx}`,
+              os: b.os,
+              pagador: b.pagador,
+              cidade: b.cidade || '',
+              endereco: b.endereco || '',
+              telefone: b.telefone || '',
+              vencimentoOriginal: inst.date,
+              pagamentoDate: b.status === 'paid' && b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : inst.date,
+              valorPago: inst.value,
+              parcelaLabel: `${idx + 1} de ${parsed.length}`,
+              statusPagamento: 'Pago'
+            });
+          }
+        });
+      } else if (b.status === 'paid') {
+        list.push({
+          id: `${b.id}-single`,
+          os: b.os,
+          pagador: b.pagador,
+          cidade: b.cidade || '',
+          endereco: b.endereco || '',
+          telefone: b.telefone || '',
+          vencimentoOriginal: formatDate(b.vencimento),
+          pagamentoDate: b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : formatDate(b.vencimento),
+          valorPago: b.valor,
+          parcelaLabel: '1 de 1',
+          statusPagamento: 'Pago'
+        });
+      }
+    });
+
+    return list;
+  }, [billings]);
+
+  // Filtering paid installments based on recebidosSearch query
+  const filteredRecebidos = useMemo(() => {
+    const query = recebidosSearch.toLowerCase();
+    if (!query) return paidInstallments;
+    return paidInstallments.filter(item =>
+      item.pagador.toLowerCase().includes(query) ||
+      item.os.toLowerCase().includes(query) ||
+      item.cidade.toLowerCase().includes(query) ||
+      item.endereco.toLowerCase().includes(query) ||
+      item.telefone.includes(query)
+    );
+  }, [paidInstallments, recebidosSearch]);
 
   // Pagination logic
   const totalItems = filteredBillings.length;
@@ -939,10 +1011,110 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         )}
 
         {activeTab === 'recebidos' && (
-          <div className={styles.placeholderPanel}>
-            <div className={styles.placeholderIcon}>💰</div>
-            <h3>Controle de Recebidos</h3>
-            <p>Esta área está em desenvolvimento. Em breve você terá relatórios e gráficos detalhados dos valores recebidos.</p>
+          <div className={styles.recebidosPanel}>
+            <div className={styles.recebidosHeader}>
+              <div>
+                <h3>Controle de Recebidos</h3>
+                <p className={styles.recebidosSubtitle}>Visualização e consulta de todas as parcelas e cobranças quitadas.</p>
+              </div>
+              <div className={styles.recebidosSummary}>
+                <span className={styles.recebidosSummaryLabel}>Total Recebido:</span>
+                <span className={styles.recebidosSummaryValue}>
+                  {formatCurrency(filteredRecebidos.reduce((acc, curr) => acc + curr.valorPago, 0))}
+                </span>
+                <span className={styles.recebidosSummaryCount}>
+                  ({filteredRecebidos.length} {filteredRecebidos.length === 1 ? 'parcela quitada' : 'parcelas quitadas'})
+                </span>
+              </div>
+            </div>
+
+            {/* Search and Filters Bar */}
+            <div className={styles.recebidosBar}>
+              <div className={styles.searchBox}>
+                <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Pesquisar por nome, OS, cidade ou telefone..."
+                  value={recebidosSearch}
+                  onChange={(e) => setRecebidosSearch(e.target.value)}
+                  className={styles.searchInput}
+                />
+                {recebidosSearch && (
+                  <button onClick={() => setRecebidosSearch('')} className={styles.clearSearchBtn} title="Limpar pesquisa">
+                    &times;
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Table Container */}
+            {filteredRecebidos.length === 0 ? (
+              <div className={styles.recebidosEmpty}>
+                <div className={styles.recebidosEmptyIcon}>💰</div>
+                <h4>Nenhum recebido encontrado</h4>
+                <p>Não há parcelas pagas registradas ou compatíveis com a busca.</p>
+              </div>
+            ) : (
+              <div className={styles.recebidosTableWrapper}>
+                <table className={styles.recebidosTable}>
+                  <thead>
+                    <tr>
+                      <th className={styles.recebidosTh}>OS</th>
+                      <th className={styles.recebidosTh}>NOME</th>
+                      <th className={styles.recebidosTh}>CIDADE</th>
+                      <th className={styles.recebidosTh}>VENCIMENTO</th>
+                      <th className={styles.recebidosTh}>ENDEREÇO</th>
+                      <th className={styles.recebidosTh}>TELEFONE</th>
+                      <th className={styles.recebidosTh}>PAGAMENTO</th>
+                      <th className={styles.recebidosTh}>VALOR PAGO</th>
+                      <th className={styles.recebidosTh}>PARCELA</th>
+                      <th className={styles.recebidosTh}>PAGAMENTO</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecebidos.map((item) => (
+                      <tr key={item.id} className={styles.recebidosTr}>
+                        <td className={styles.recebidosTd} style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>
+                          #{item.os}
+                        </td>
+                        <td className={styles.recebidosTd} style={{ fontWeight: '600' }}>
+                          {item.pagador}
+                        </td>
+                        <td className={styles.recebidosTd}>
+                          {item.cidade || <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                        </td>
+                        <td className={styles.recebidosTd}>
+                          {item.vencimentoOriginal}
+                        </td>
+                        <td className={styles.recebidosTd} title={item.endereco}>
+                          {item.endereco ? (item.endereco.length > 25 ? `${item.endereco.substring(0, 25)}...` : item.endereco) : <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                        </td>
+                        <td className={styles.recebidosTd}>
+                          {item.telefone || <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                        </td>
+                        <td className={styles.recebidosTd} style={{ fontWeight: '500' }}>
+                          {item.pagamentoDate}
+                        </td>
+                        <td className={styles.recebidosTd} style={{ fontWeight: '700', color: 'var(--success)' }}>
+                          {formatCurrency(item.valorPago)}
+                        </td>
+                        <td className={styles.recebidosTd} style={{ fontWeight: '500', color: 'var(--text-secondary)' }}>
+                          {item.parcelaLabel}
+                        </td>
+                        <td className={styles.recebidosTd}>
+                          <span className={styles.recebidosBadgePaid}>
+                            Pago
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
