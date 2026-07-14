@@ -28,7 +28,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   
   // Modal states for user management and change password
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   
   // Selection states
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -463,12 +462,22 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             Olá, <strong>{user.username}</strong> ({user.role === 'admin' ? 'Admin' : 'Operador'})
             {timeStr && <span className={styles.userTime}> • {timeStr}</span>}
           </span>
-          {user.role === 'admin' && (
-            <button className={styles.userMgmtBtn} onClick={() => setIsUserModalOpen(true)} title="Gerenciar Usuários">
-              Gerenciar Usuários
-            </button>
-          )}
-          <button className={styles.pwdBtn} onClick={() => setIsPasswordModalOpen(true)} title="Alterar Senha">
+          <button 
+            type="button"
+            onClick={() => setIsPasswordModalOpen(true)} 
+            title="Alterar Senha"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 500,
+              marginRight: '16px',
+              padding: 0,
+              textDecoration: 'underline'
+            }}
+          >
             Alterar Senha
           </button>
           <button className={styles.logoutBtn} onClick={onLogout}>
@@ -648,13 +657,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
         username={user.username}
-      />
-
-      {/* User Management Modal */}
-      <UserManagementModal
-        isOpen={isUserModalOpen}
-        onClose={() => setIsUserModalOpen(false)}
-        currentUsername={user.username}
       />
 
       {/* Unify Modal */}
