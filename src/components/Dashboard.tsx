@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { db, Billing, parseInstallments } from '@/services/db';
+import { db, Billing, parseInstallments, Recebido } from '@/services/db';
 import BillingModal from './BillingModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import UserManagementModal from './UserManagementModal';
@@ -37,6 +37,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Search state for Recebidos tab
   const [recebidosSearch, setRecebidosSearch] = useState('');
+
+  // Recebidos list state
+  const [recebidos, setRecebidos] = useState<Recebido[]>([]);
 
   useEffect(() => {
     const updateClock = () => {
@@ -75,12 +78,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setCurrentPage(1);
   }, [searchQuery, filterStatus]);
 
-  // Fetch billings from Supabase
+  // Fetch billings and recebidos from Supabase
   const fetchBillings = async () => {
     setIsLoading(true);
     try {
-      const data = await db.getBillings();
-      setBillings(data);
+      const [billingsData, recebidosData] = await Promise.all([
+        db.getBillings(),
+        db.getRecebidos()
+      ]);
+      setBillings(billingsData);
+      setRecebidos(recebidosData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -148,12 +155,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Save billing handler (insert or update)
   const handleSaveBilling = async (data: Omit<Billing, 'id' | 'created_at'>) => {
-    if (editingBilling && editingBilling.id) {
-      const updated = await db.updateBilling(editingBilling.id, data);
-      setBillings(prev => prev.map(item => item.id === editingBilling.id ? updated : item));
-    } else {
-      const created = await db.createBilling(data);
-      setBillings(prev => [...prev, created]);
+    try {
+      if (editingBilling && editingBilling.id) {
+        const updated = await db.updateBilling(editingBilling.id, data);
+        await db.syncRecebidosFromBillingObject(updated);
+      } else {
+        const created = await db.createBilling(data);
+        await db.syncRecebidosFromBillingObject(created);
+      }
+      fetchBillings();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar cobrança.');
     }
   };
 
@@ -162,8 +175,22 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     if (!item.id) return;
     const newStatus: 'paid' | 'pending' = item.status === 'paid' ? 'pending' : 'paid';
     try {
-      const updated = await db.updateBilling(item.id, { status: newStatus });
-      setBillings(prev => prev.map(b => b.id === item.id ? updated : b));
+      let updatedParcelas = item.parcelas;
+      if (item.parcelas) {
+        try {
+          const parsed = JSON.parse(item.parcelas);
+          if (Array.isArray(parsed)) {
+            updatedParcelas = JSON.stringify(
+              parsed.map(p => ({ ...p, paga: newStatus === 'paid' }))
+            );
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const updated = await db.updateBilling(item.id, { status: newStatus, parcelas: updatedParcelas });
+      await db.syncRecebidosFromBillingObject(updated);
+      fetchBillings();
     } catch (err) {
       console.error(err);
       alert('Erro ao atualizar status.');
@@ -176,7 +203,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     if (confirm(`Tem certeza que deseja excluir a cobrança da OS ${item.os} (${item.pagador}) no valor de ${formatCurrency(item.valor)}?`)) {
       try {
         await db.deleteBilling(item.id);
-        setBillings(prev => prev.filter(b => b.id !== item.id));
+        fetchBillings();
       } catch (err) {
         console.error(err);
         alert('Erro ao excluir cobrança.');
@@ -272,61 +299,22 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     return matchesStatus && matchesSearch;
   });
 
-  // Extracting paid installments for Recebidos tab
+  // Extracting paid installments from Supabase recebidos table
   const paidInstallments = useMemo(() => {
-    const list: Array<{
-      id: string;
-      os: string;
-      pagador: string;
-      cidade: string;
-      endereco: string;
-      telefone: string;
-      vencimentoOriginal: string;
-      pagamentoDate: string;
-      valorPago: number;
-      parcelaLabel: string;
-      statusPagamento: string;
-    }> = [];
-
-    billings.forEach(b => {
-      const parsed = parseInstallments(b);
-      if (parsed) {
-        parsed.forEach((inst, idx) => {
-          if (inst.paga) {
-            list.push({
-              id: `${b.id}-inst-${idx}`,
-              os: b.os,
-              pagador: b.pagador,
-              cidade: b.cidade || '',
-              endereco: b.endereco || '',
-              telefone: b.telefone || '',
-              vencimentoOriginal: inst.date,
-              pagamentoDate: b.status === 'paid' && b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : inst.date,
-              valorPago: inst.value,
-              parcelaLabel: `${idx + 1} de ${parsed.length}`,
-              statusPagamento: 'Pago'
-            });
-          }
-        });
-      } else if (b.status === 'paid') {
-        list.push({
-          id: `${b.id}-single`,
-          os: b.os,
-          pagador: b.pagador,
-          cidade: b.cidade || '',
-          endereco: b.endereco || '',
-          telefone: b.telefone || '',
-          vencimentoOriginal: formatDate(b.vencimento),
-          pagamentoDate: b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : formatDate(b.vencimento),
-          valorPago: b.valor,
-          parcelaLabel: '1 de 1',
-          statusPagamento: 'Pago'
-        });
-      }
-    });
-
-    return list;
-  }, [billings]);
+    return recebidos.map(r => ({
+      id: r.id || Math.random().toString(),
+      os: r.os,
+      pagador: r.nome,
+      cidade: r.cidade || '',
+      endereco: r.endereco || '',
+      telefone: r.telefone || '',
+      vencimentoOriginal: formatDate(r.vencimento),
+      pagamentoDate: formatDate(r.pagamento),
+      valorPago: Number(r.valor_pago),
+      parcelaLabel: r.parcela,
+      statusPagamento: r.pagamento_metodo || 'Pago'
+    }));
+  }, [recebidos]);
 
   // Filtering paid installments based on recebidosSearch query
   const filteredRecebidos = useMemo(() => {

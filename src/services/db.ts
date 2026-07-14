@@ -43,6 +43,22 @@ export function parseInstallments(item: Billing): Installment[] | null {
   return null;
 }
 
+export interface Recebido {
+  id?: string;
+  os: string;
+  nome: string;
+  cidade?: string;
+  vencimento: string;
+  endereco?: string;
+  telefone?: string;
+  pagamento: string;
+  valor_pago: number;
+  parcela: string;
+  pagamento_metodo?: string;
+  billing_id?: string;
+  created_at?: string;
+}
+
 export interface User {
   id?: string;
   username: string;
@@ -103,6 +119,87 @@ export const db = {
       console.error('Error deleting billing:', error.message);
       throw error;
     }
+  },
+
+  // Recebidos operations
+  async getRecebidos(): Promise<Recebido[]> {
+    const { data, error } = await supabase
+      .from('recebidos')
+      .select('*')
+      .order('pagamento', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching recebidos:', error.message);
+      throw error;
+    }
+    return data || [];
+  },
+
+  async syncRecebidosForBilling(billingId: string, installments: Omit<Recebido, 'id' | 'created_at'>[]): Promise<void> {
+    const { error: deleteError } = await supabase
+      .from('recebidos')
+      .delete()
+      .eq('billing_id', billingId);
+
+    if (deleteError) {
+      console.error('Error deleting previous recebidos:', deleteError.message);
+      throw deleteError;
+    }
+
+    if (installments.length > 0) {
+      const { error: insertError } = await supabase
+        .from('recebidos')
+        .insert(installments);
+
+      if (insertError) {
+        console.error('Error inserting recebidos:', insertError.message);
+        throw insertError;
+      }
+    }
+  },
+
+  async syncRecebidosFromBillingObject(billing: Billing): Promise<void> {
+    if (!billing.id) return;
+    
+    const list: Omit<Recebido, 'id' | 'created_at'>[] = [];
+    const parsed = parseInstallments(billing);
+    
+    if (parsed) {
+      parsed.forEach((inst, idx) => {
+        if (inst.paga || billing.status === 'paid') {
+          const [day, month, year] = inst.date.split('/');
+          list.push({
+            os: billing.os,
+            nome: billing.pagador,
+            cidade: billing.cidade || undefined,
+            vencimento: `${year}-${month}-${day}`,
+            endereco: billing.endereco || undefined,
+            telefone: billing.telefone || undefined,
+            pagamento: new Date().toISOString().split('T')[0],
+            valor_pago: inst.value,
+            parcela: `${idx + 1} de ${parsed.length}`,
+            billing_id: billing.id
+          });
+        }
+      });
+    } else {
+      if (billing.status === 'paid') {
+        list.push({
+          os: billing.os,
+          nome: billing.pagador,
+          cidade: billing.cidade || undefined,
+          vencimento: billing.vencimento,
+          endereco: billing.endereco || undefined,
+          telefone: billing.telefone || undefined,
+          pagamento: new Date().toISOString().split('T')[0],
+          valor_pago: billing.valor,
+          parcela: '1 de 1',
+          billing_id: billing.id
+        });
+      }
+    }
+    
+    await this.syncRecebidosForBilling(billing.id, list);
   },
 
   async toggleBillingPaid(id: string, currentStatus: 'paid' | 'pending' | 'overdue'): Promise<Billing> {
