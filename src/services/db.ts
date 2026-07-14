@@ -59,6 +59,22 @@ export interface Recebido {
   created_at?: string;
 }
 
+export interface Venda {
+  id?: string;
+  aniversario?: string;
+  lab?: string;
+  os?: string;
+  paciente: string;
+  cidade?: string;
+  telefone?: string;
+  valor_total?: number;
+  vezes?: string;
+  valor_parcela?: number;
+  compra?: string;
+  endereco?: string;
+  created_at?: string;
+}
+
 export interface User {
   id?: string;
   username: string;
@@ -350,5 +366,109 @@ export const db = {
     }
     
     return data[0];
+  },
+
+  async getVendasSede(): Promise<Venda[]> {
+    const { data, error } = await supabase
+      .from('vendas_sede')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching vendas_sede:', error.message);
+      throw error;
+    }
+    return data || [];
+  },
+
+  async createVendaSede(venda: Omit<Venda, 'id' | 'created_at'>): Promise<Venda> {
+    const { data, error } = await supabase
+      .from('vendas_sede')
+      .insert([venda])
+      .select();
+
+    if (error) {
+      console.error('Error creating venda_sede:', error.message);
+      throw error;
+    }
+    return data[0];
+  },
+
+  async updateVendaSede(id: string, updates: Partial<Omit<Venda, 'id' | 'created_at'>>): Promise<Venda> {
+    const { data, error } = await supabase
+      .from('vendas_sede')
+      .update(updates)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error updating venda_sede:', error.message);
+      throw error;
+    }
+    return data[0];
+  },
+
+  async deleteVendaSede(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('vendas_sede')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting venda_sede:', error.message);
+      throw error;
+    }
+  },
+
+  async getVendasPovoados(): Promise<Venda[]> {
+    const { data, error } = await supabase
+      .from('vendas_povoados')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching vendas_povoados:', error.message);
+      throw error;
+    }
+    return data || [];
+  },
+
+  async createVendaPovoados(venda: Omit<Venda, 'id' | 'created_at'>): Promise<Venda> {
+    const { data, error } = await supabase
+      .from('vendas_povoados')
+      .insert([venda])
+      .select();
+
+    if (error) {
+      console.error('Error creating venda_povoados:', error.message);
+      throw error;
+    }
+    return data[0];
+  },
+
+  async updateVendaPovoados(id: string, updates: Partial<Omit<Venda, 'id' | 'created_at'>>): Promise<Venda> {
+    const { data, error } = await supabase
+      .from('vendas_povoados')
+      .update(updates)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error updating venda_povoados:', error.message);
+      throw error;
+    }
+    return data[0];
+  },
+
+  async deleteVendaPovoados(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('vendas_povoados')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting venda_povoados:', error.message);
+      throw error;
+    }
   }
 };
