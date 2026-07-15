@@ -48,6 +48,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Selected Location filter for main Cobranças page
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
 
+  // Selected Bank filter for main Cobranças page
+  const [selectedBanco, setSelectedBanco] = useState<string>('all');
+
   // Search state for Recebidos tab
   const [recebidosSearch, setRecebidosSearch] = useState('');
 
@@ -349,13 +352,27 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     return Array.from(locations).sort();
   }, [billings]);
 
-  // Filtering list based on search, status and location
+  // Extract unique banks from billings list
+  const uniqueBancos = useMemo(() => {
+    const bancos = new Set<string>();
+    billings.forEach(b => {
+      if (b.banco && b.banco.trim()) {
+        bancos.add(b.banco.trim());
+      }
+    });
+    return Array.from(bancos).sort();
+  }, [billings]);
+
+  // Filtering list based on search, status, location and bank
   const filteredBillings = billings.filter(item => {
     const displayStatus = getDisplayStatus(item);
     const matchesStatus = filterStatus === 'all' || displayStatus === filterStatus;
     
     const matchesLocation = selectedLocation === 'all' || 
       (item.cidade && item.cidade.trim().toLowerCase() === selectedLocation.trim().toLowerCase());
+
+    const matchesBanco = selectedBanco === 'all' || 
+      (item.banco && item.banco.trim().toLowerCase() === selectedBanco.trim().toLowerCase());
     
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -367,7 +384,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       (item.observacao && item.observacao.toLowerCase().includes(query)) ||
       (item.banco && item.banco.toLowerCase().includes(query));
     
-    return matchesStatus && matchesLocation && matchesSearch;
+    return matchesStatus && matchesLocation && matchesBanco && matchesSearch;
   });
 
   // Extracting paid installments from Supabase recebidos table
@@ -621,6 +638,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             selectedLocation={selectedLocation}
             setSelectedLocation={setSelectedLocation}
             uniqueLocations={uniqueLocations}
+            selectedBanco={selectedBanco}
+            setSelectedBanco={setSelectedBanco}
+            uniqueBancos={uniqueBancos}
             onPrint={handlePrint}
           />
         )}

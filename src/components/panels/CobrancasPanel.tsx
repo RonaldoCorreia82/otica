@@ -37,6 +37,9 @@ interface CobrancasPanelProps {
   selectedLocation: string;
   setSelectedLocation: Dispatch<SetStateAction<string>>;
   uniqueLocations: string[];
+  selectedBanco: string;
+  setSelectedBanco: Dispatch<SetStateAction<string>>;
+  uniqueBancos: string[];
   onPrint: (mode: 'summary' | 'detailed', location?: string) => void;
 }
 
@@ -73,6 +76,9 @@ export default function CobrancasPanel({
   selectedLocation,
   setSelectedLocation,
   uniqueLocations,
+  selectedBanco,
+  setSelectedBanco,
+  uniqueBancos,
   onPrint
 }: CobrancasPanelProps) {
   const startIndex = (currentPage - 1) * pageSize;
@@ -170,6 +176,19 @@ export default function CobrancasPanel({
           </select>
           <select
             className={styles.filterSelect}
+            value={selectedBanco}
+            onChange={(e) => {
+              setSelectedBanco(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="all">Todos os Bancos</option>
+            {uniqueBancos.map(bco => (
+              <option key={bco} value={bco}>{bco}</option>
+            ))}
+          </select>
+          <select
+            className={styles.filterSelect}
             value={selectedLocation}
             onChange={(e) => {
               setSelectedLocation(e.target.value);
@@ -257,8 +276,8 @@ export default function CobrancasPanel({
                       title="Selecionar Todos na Página"
                     />
                   </th>
-                  <th className={styles.th} style={{ width: '6%' }}>OS</th>
-                  <th className={styles.th} style={{ width: '28%' }}>Pagador / CPF / Contato</th>
+                  <th className={styles.th} style={{ width: '10%' }}>OS</th>
+                  <th className={styles.th} style={{ width: '24%' }}>Pagador / CPF / Contato</th>
                   <th className={styles.th} style={{ width: '20%' }}>Localização / Endereço</th>
                   <th className={styles.th} style={{ width: '12%' }}>Banco</th>
                   <th className={styles.th} style={{ width: '11%', whiteSpace: 'nowrap' }}>Vencimento</th>
@@ -280,8 +299,10 @@ export default function CobrancasPanel({
                           className={styles.checkbox}
                         />
                       </td>
-                      <td className={styles.td} style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>
-                        #{item.os}
+                      <td className={styles.td} style={{ fontWeight: '700', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {item.os.split(/[,\s]+/).filter(Boolean).map((part, idx) => (
+                          <div key={idx}>#{part}</div>
+                        ))}
                       </td>
                       <td className={styles.td}>
                         <div className={styles.clientName}>{item.pagador}</div>
@@ -418,7 +439,11 @@ export default function CobrancasPanel({
                         style={{ width: '18px', height: '18px' }}
                       />
                       <div>
-                        <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>OS #{item.os}</div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                          {item.os.split(/[,\s]+/).filter(Boolean).map((part, idx) => (
+                            <div key={idx}>OS #{part}</div>
+                          ))}
+                        </div>
                         <div className={styles.mobileClient}>{item.pagador}</div>
                         {item.cpf && <div className={styles.mobileDesc} style={{ fontSize: '12px' }}>CPF: {item.cpf}</div>}
                       </div>
