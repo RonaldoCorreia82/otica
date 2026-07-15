@@ -25,6 +25,13 @@ const TEMPLATES: MessageTemplate[] = [
     category: 'Cobrança',
     description: 'Lembrete educado enviado alguns dias antes ou no dia do vencimento.',
     defaultText: 'Olá *[Nome]*, lembramos que sua parcela vence em breve...'
+  },
+  {
+    id: 'aviso_restricao',
+    name: 'Aviso de Restrição (SPC/SERASA)',
+    category: 'Aviso Legal',
+    description: 'Aviso sobre pendência de contas e possibilidade de registro de CPF nos órgãos de proteção ao crédito (SPC, SERASA, Cartório).',
+    defaultText: 'Observa-se que há uma pendência em suas contas aqui na *Ótica Styllus*...'
   }
 ];
 
@@ -43,6 +50,8 @@ export default function MensagensPanel() {
   const finalMessage = useMemo(() => {
     if (selectedTemplateId === 'cobranca_inicial') {
       return `Bom dia *${nome}*\nAqui é *${inaraName}*, do setor financeiro da *${oticaName}*. \n\nVerificamos um boleto em aberto no nosso sistema no nome do(a) senhor(a) referente a parcela *${parcela}* do mês *${mes}*.\n\nGostaria de confirmar se já foi realizado o pagamento?`;
+    } else if (selectedTemplateId === 'aviso_restricao') {
+      return `Bom dia, tudo bem? \n\nObserva-se que há uma pendência em suas contas aqui na *${oticaName}*. Para facilitar a regularização, há a possibilidade de renegociar a dívida. O objetivo é encontrar uma solução que seja conveniente para você.\n\nCaso não seja possível efetuar o pagamento ou renegociar, é importante saber que o banco registrará o seu CPF nos Órgãos, *SPC, SERASA E CARTÓRIO*. A ideia é evitar essa situação e ajudar a resolver a pendência da melhor forma possível.\n\nPor favor, entre em contato para discutir as opções disponíveis. Estou à disposição para ajudar!\n\nAgradeço pela atenção e aguardo seu retorno.`;
     } else {
       return `Olá *${nome}*!\nTudo bem?\n\nPassando para lembrar que a parcela *${parcela}* do mês de *${mes}* referente à sua compra na *${oticaName}* vence nos próximos dias.\n\nQualquer dúvida, estamos à disposição!`;
     }
