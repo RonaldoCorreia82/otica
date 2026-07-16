@@ -563,7 +563,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         >
           Cobranças
         </button>
-        <button
+        {/* <button
           className={`${styles.navLink} ${activeTab === 'vendas' ? styles.navLinkActive : ''}`}
           onClick={() => {
             setActiveTab('vendas');
@@ -571,7 +571,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           }}
         >
           Vendas
-        </button>
+        </button> */}
         <button
           className={`${styles.navLink} ${activeTab === 'recebidos' ? styles.navLinkActive : ''}`}
           onClick={() => {
