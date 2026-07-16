@@ -40,7 +40,7 @@ interface CobrancasPanelProps {
   selectedBanco: string;
   setSelectedBanco: Dispatch<SetStateAction<string>>;
   uniqueBancos: string[];
-  onPrint: (mode: 'summary' | 'detailed', location?: string) => void;
+  onPrint: (mode: 'summary' | 'detailed', location?: string, textFilter?: string) => void;
 }
 
 export default function CobrancasPanel({

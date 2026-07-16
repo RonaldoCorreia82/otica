@@ -44,6 +44,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Selected Location for printing filter state
   const [printLocationFilter, setPrintLocationFilter] = useState<string>('all');
+  const [printTextFilter, setPrintTextFilter] = useState<string>('');
 
   // Selected Location filter for main Cobranças page
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
@@ -331,13 +332,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   // Printing dispatcher
-  const handlePrint = (mode: 'summary' | 'detailed', location: string = 'all') => {
+  const handlePrint = (mode: 'summary' | 'detailed', location: string = 'all', textFilter: string = '') => {
     setPrintLocationFilter(location);
+    setPrintTextFilter(textFilter);
     setPrintMode(mode);
     setTimeout(() => {
       window.print();
       setPrintMode(null);
       setPrintLocationFilter('all');
+      setPrintTextFilter('');
     }, 150);
   };
 
@@ -467,9 +470,25 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   // Printed list filtered by location if specified
   const printedBillings = useMemo(() => {
-    if (printLocationFilter === 'all') return billings;
-    return billings.filter(b => b.cidade && b.cidade.trim().toLowerCase() === printLocationFilter.trim().toLowerCase());
-  }, [billings, printLocationFilter]);
+    let list = billings;
+    
+    // 1. City dropdown filter (from location)
+    if (printLocationFilter && printLocationFilter !== 'all') {
+      list = list.filter(b => b.cidade && b.cidade.trim().toLowerCase() === printLocationFilter.trim().toLowerCase());
+    }
+    
+    // 2. Typed text filter
+    const textFilter = printTextFilter ? printTextFilter.trim().toLowerCase() : '';
+    if (textFilter) {
+      list = list.filter(b => {
+        const matchesCidade = b.cidade && b.cidade.trim().toLowerCase().includes(textFilter);
+        const matchesEndereco = b.endereco && b.endereco.trim().toLowerCase().includes(textFilter);
+        return matchesCidade || matchesEndereco;
+      });
+    }
+    
+    return list;
+  }, [billings, printLocationFilter, printTextFilter]);
 
   // Select all visible items on current page helpers
   const pageIds = paginatedBillings.map(b => b.id).filter(Boolean) as string[];
@@ -749,7 +768,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
       {/* Hidden Print-Only Detailed Table */}
       <div className={styles.printTableArea}>
-        <h2>Relatório Detalhado de Cobranças - Ótica {printLocationFilter !== 'all' ? `(${printLocationFilter})` : ''}</h2>
+        <h2>Relatório Detalhado de Cobranças - Ótica {
+          (() => {
+            const parts = [];
+            if (printLocationFilter && printLocationFilter !== 'all') {
+              parts.push(printLocationFilter);
+            }
+            if (printTextFilter) {
+              parts.push(printTextFilter);
+            }
+            return parts.length > 0 ? `(${parts.join(' - ')})` : '';
+          })()
+        }</h2>
         <p>Gerado em {timeStr ? timeStr.split(' - ')[0] : new Date().toLocaleDateString('pt-BR')}</p>
         <table className={styles.printTable}>
           <thead>
